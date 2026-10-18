@@ -32,6 +32,37 @@
 .avatar-name-row{display:grid;grid-template-columns:65px 1fr;gap:10px;align-items:center;margin:0 0 8px;font-size:11px;color:#bbd4c7}.avatar-name-row input{min-width:0;width:100%;border:1px solid #97c6ad44;background:#0d1824;border-radius:5px;padding:8px;color:#e1f4e5;font-size:13px}
 
 .class-option canvas{width:38px;height:44px;flex-shrink:0;object-fit:contain}.ability-icon canvas{width:31px;height:36px;display:block;object-fit:contain}@media(max-width:600px){.class-option canvas{width:30px;height:36px}.ability-icon canvas{width:25px;height:29px}}
+
+/* A phone in landscape has room across the screen, but very little height.
+   Let the entire menu scroll so the start and appearance actions stay reachable. */
+@media (orientation:landscape) and (max-height:600px) and (pointer:coarse){
+  html,body,#app{height:100dvh}
+  .menu-screen{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+  .menu-content{position:relative;top:auto;bottom:auto;left:auto;right:auto;transform:none;width:min(420px,calc(100% - 36px));max-width:none;max-height:none;overflow:visible;margin:0 auto;padding:69px 0 max(24px,env(safe-area-inset-bottom));scrollbar-width:auto}
+  .game-title{font-size:clamp(42px,10vh,59px);margin-bottom:12px}
+  .game-title i{font-size:.8em}
+  .menu-intro,.world-caption,.world-note,.world-coordinate{display:none}
+  .eyebrow{margin-bottom:9px}
+  .menu-tagline{margin-bottom:5px}
+  .loop-explainer{margin:8px 0 11px}
+  .class-description{min-height:0;margin:5px 0}
+  .difficulty-description{margin-bottom:7px}
+  .menu-footer{margin-top:12px}
+  .overlay{align-items:flex-start;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px max(14px,env(safe-area-inset-right)) 18px max(14px,env(safe-area-inset-left))}
+  .overlay>.modal{margin:auto}
+  .avatar-modal{width:min(860px,100%);padding:19px 22px}
+  .avatar-modal .avatar-studio{grid-template-columns:minmax(180px,.85fr) minmax(240px,1.15fr);gap:16px;margin:10px 0}
+  .avatar-stage canvas{width:min(100%,210px);margin:auto}
+  .avatar-preview-label{margin:-8px 0 7px}
+  .avatar-modes{padding:4px;gap:3px}
+  .avatar-modes button{padding:5px 6px;font-size:9px}
+  .avatar-color-row{padding:4px 0}
+  .avatar-modal .modal-intro{margin-bottom:7px}
+}
+@media (orientation:landscape) and (max-height:600px) and (max-width:650px) and (pointer:coarse){
+  .avatar-modal .avatar-studio{grid-template-columns:1fr}
+  .avatar-stage canvas{width:160px}
+}
 </style>
 </head>
 <body>

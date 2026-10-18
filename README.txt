@@ -1,5 +1,1 @@
-NULL DRIFT v10
-
-index.html を静的サイトの公開フォルダーの直下に置いてください。
-絵・音・ゲームはHTMLに含まれているため、ほかのファイルは不要です。
-公開先へのアップロードはこのZIPでは行いません。
+NULL DRIFT v11 - mobile landscape menu and avatar editor fix. For GitHub Pages, replace the repository root index.html with this index.html and commit the change.
