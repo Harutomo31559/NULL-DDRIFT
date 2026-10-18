@@ -339,7 +339,7 @@ const entry = (id, name, label, description, icon, color, rest = {}) => ({ id, n
 const TUNING = {
   icbm: { lockOn: 2.5, drop: 1.5, cooldown: 1 },
   baby: { dashCooldown: 2.2 },
-  bell: { teleportCooldown: 1, echoTeleportCooldown: 0.5, teleportMinDistance: 130, teleportTargetDistance: 220, teleportMaxDistance: 340, gongRadius: 230, gongSpeed: 300 },
+  bell: { teleportCooldown: 10, echoTeleportCooldown: 5, teleportMinDistance: 130, teleportTargetDistance: 220, teleportMaxDistance: 340, gongRadius: 230, gongSpeed: 300 },
   mine: { giftReplacementChance: 1 / 50 },
   husk: { wake: 4.7, wakeWithCloserCurse: 3.2, historyDelay: 1.2 },
   collapse: { grace: 3, crack: 3.2, fall: .65, gap: .35 },
@@ -360,7 +360,7 @@ const DIFFICULTIES = [
   entry('extreme', 'エクストリーム', 'EXTREME', '敵が速く、崩壊も早い。慣れてからの挑戦向け。', '△', '#ff798e', { enemySpeed: 1.23, curseEvery: 1, startingShield: 0 }),
 ];
 const ENEMIES = [
-  entry('bell','ベル','BELL','鎖に包まれた鐘。1秒ごとに近くの足場へ転移。触れると打ち上げられ、近くのギフトを回収。連続4回は危険。','♧','#d5bd82',{from:1,max:1}),
+  entry('bell','ベル','BELL','鎖に包まれた鐘。10秒ごとに近くの足場へ転移。触れると打ち上げられ、近くのギフトを回収。連続4回は危険。','♧','#d5bd82',{from:1,max:1}),
   entry('mart','マート','MART','地形をすり抜け、ゆっくり追う水の魔物。Lv6ごとに大きくなる。','◆','#7ac8e5',{from:1,max:1}),
   entry('icbm','ICBM','ICBM',`${TUNING.icbm.lockOn}秒追尾して照準を固定。さらに${TUNING.icbm.drop}秒後に爆発。爆発後${TUNING.icbm.cooldown}秒で再追尾。赤い円から離れよう。`,'⊕','#f39f65',{from:1,max:2}),
   entry('husk','ハスク','HUSK','追跡開始時に紫の光と音で出現し、1.2秒前の動きをコピーする。逆走に注意。Lv10から追跡する数が増える。','♙','#c4a0ff',{from:1,max:2}),
@@ -380,7 +380,7 @@ const CURSES = [
  entry('closerHusk','迫るハスク','CLOSER HUSK','ハスクとの間隔が0.6秒へ短縮。逆走がさらに危険になる。','◌','#be9dff',{from:1,enemies:['husk'],excludes:['furtherHusk']}),
  entry('furtherHusk','遠のくハスク','FURTHER HUSK','ハスクとの間隔が1.6秒になる。後ろの隊列は長くなる。','◌','#be9dff',{from:1,enemies:['husk'],excludes:['closerHusk']}),
  entry('biggerBlast','大きな爆風','BIGGER BLAST','ICBMの爆風が広がる。2段階まで累積する。','⊙','#ffb77b',{from:5,enemies:['icbm'],max:2}),
- entry('louderBell','もっと鳴り響く','RING EVEN LOUDER','ベルの転移間隔が1秒から0.5秒になる。','♧','#ead79e',{from:1,enemies:['bell']}),
+ entry('louderBell','もっと鳴り響く','RING EVEN LOUDER','ベルの転移間隔が10秒から5秒になる。','♧','#ead79e',{from:1,enemies:['bell']}),
  entry('missileSilo','ミサイルミサイロ','MISSILE MISSILE SILO','各フロアに現れるICBMの数が3倍になる。','⊕','#ffad7b',{from:1,enemies:['icbm']}),
  entry('mightyGong','マイティ・ゴング','MIGHTY GONG','ベルの大きさが2倍。転移するたびに強い衝撃波で周囲を吹き飛ばす。','◉','#f4d58c',{from:1,enemies:['bell']}),
  entry('moreMines','増える地雷','MORE TRIPMINES','ギフトが地雷に変わる確率が2倍に増える。2段階で4倍。カジュアルでは選択不可。','✕','#ff8c9a',{from:5,max:2,noCasual:true}),
