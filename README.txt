@@ -1,1 +1,1 @@
-NULL DRIFT v11 - mobile landscape menu and avatar editor fix. For GitHub Pages, replace the repository root index.html with this index.html and commit the change.
+NULL DRIFT v12. Replace the index.html in the root of the GitHub Pages repository NULL-DDRIFT and commit the change. Updates: Baby dash cooldown, Bell teleport, gift-slot tripmines, three new curses.

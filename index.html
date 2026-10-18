@@ -125,7 +125,7 @@ const {generateWorld,floorHeight}=(()=>{
 const STEP=352;
 const key=(x,y)=>`${x},${y}`;
 function floorHeight(tile,x,y){if(!tile)return 0;const r=tile.ramp;if(!r)return tile.elevation||0;const along=r.axis==='x'?x:y,t=Math.max(0,Math.min(1,(along-r.min)/(r.max-r.min)));return r.from+(r.to-r.from)*t;}
-function generateWorld({level=1,difficulty='casual',activeCurses=[],upgrades={},rng=Math.random}){
+function generateWorld({level=1,difficulty='casual',activeCurses=[],upgrades={},mineChance=1/50,rng=Math.random}){
  const pick=a=>a[Math.floor(rng()*a.length)];
  const random=(a,b)=>a+(b-a)*rng();
  const has=id=>activeCurses.includes(id);
@@ -210,9 +210,15 @@ function generateWorld({level=1,difficulty='casual',activeCurses=[],upgrades={},
    for(let i=0;i<railCount;i++){let a=candidates[(i*5)%candidates.length],b=rooms[(i+1)%Math.min(5,rooms.length)];if(a===b)continue;rails.push({id:`rail-${i}`,x1:a.anchor.x,y1:a.anchor.y,x2:b.anchor.x,y2:b.anchor.y});}
  }
  const mineFrom=difficulty==='extreme'?3:5;
- if(difficulty!=='casual'&&level>=mineFrom){
-   let desired=Math.min(14,1+Math.floor((level-mineFrom)/2))*Math.pow(2,activeCurses.filter(c=>c==='moreMines').length);
-   for(let i=0;i<desired;i++){let room=safeRooms[i%safeRooms.length],t=pick(tiles.filter(t=>t.roomId===room.id&&t.w>30&&t.h>30));let x=t.x+random(-t.w*.25,t.w*.25),y=t.y+random(-t.h*.25,t.h*.25);if(gifts.some(g=>Math.hypot(g.x-x,g.y-y)<28))continue;hazards.push({id:`mine-${i}`,type:'mine',x,y,radius:35,life:9999,maxLife:9999,timer:0,armed:false,tileId:t.id});}
+ if(level>=mineFrom){
+   const chance=Math.min(1,mineChance*Math.pow(2,activeCurses.filter(c=>c==='moreMines').length));
+   const remaining=[];
+   for(let i=0;i<gifts.length;i++){
+     const gift=gifts[i];
+     if((remaining.length>0||i<gifts.length-1)&&rng()<chance){hazards.push({id:`mine-${hazards.length}`,type:'mine',x:gift.x,y:gift.y,radius:35,life:9999,maxLife:9999,timer:0,armed:false,tileId:gift.tileId});}
+     else remaining.push(gift);
+   }
+   gifts.splice(0,gifts.length,...remaining);
  }
  if(level>=(difficulty==='casual'?15:10))for(let i=0;i<Math.min(5,1+Math.floor(level/10));i++){let r=safeRooms[(i*4+2)%safeRooms.length];hazards.push({id:`sea-${i}`,type:'seamine',x:r.x+r.span/2+16,y:r.y+64,radius:52,life:9999,maxLife:9999,timer:0,armed:false});}
  if(level>=3){
@@ -221,7 +227,7 @@ function generateWorld({level=1,difficulty='casual',activeCurses=[],upgrades={},
    for(let i=0;i<number;i++){let pool=level<8?['chance']:level<14?['chance','protection','purgatory','passage']:['chance','protection','purgatory','passage','purification'];let available=pool.filter(k=>k==='chance'||!used.has(k));let type=level>=8&&i===0?'purgatory':pick(available.length?available:['chance']);used.add(type);let room=safeRooms[(i*3+1)%safeRooms.length];let p=room.anchor;altars.push({x:p.x,y:p.y,radius:22,type,used:false,cost:type==='protection'?12+Math.floor(level/10)*4:type==='purification'?100:0,roomId:room.id});}
  }
  const titles={orbital:'環状庭園',tributary:'分岐する回廊',serpentine:'折れ曲がる遺跡',constellation:'星々の群島'};
- return {tiles,gifts,rooms,obstacles,pads,rails,hazards,altars,total:gifts.length,terrainCount:rooms.length+edges.length,goldUnitValue:((rooms.length-1)*3)/gifts.length,mapStyle:style,floorName:level>=18?'高層の残響':level>=iceFrom?'凍てつく'+titles[style]:titles[style],maxDistance};
+ return {tiles,gifts,rooms,obstacles,pads,rails,hazards,altars,total:gifts.length,terrainCount:rooms.length+edges.length,goldUnitValue:((rooms.length-1)*3)/Math.max(1,gifts.length),mapStyle:style,floorName:level>=18?'高層の残響':level>=iceFrom?'凍てつく'+titles[style]:titles[style],maxDistance};
 }
 
 return {generateWorld,floorHeight};
@@ -332,6 +338,9 @@ const entry = (id, name, label, description, icon, color, rest = {}) => ({ id, n
 // Gameplay tuning: keep timings and speed multipliers here for quick balance passes.
 const TUNING = {
   icbm: { lockOn: 2.5, drop: 1.5, cooldown: 1 },
+  baby: { dashCooldown: 2.2 },
+  bell: { teleportCooldown: 1, echoTeleportCooldown: 0.5, teleportMinDistance: 130, teleportTargetDistance: 220, teleportMaxDistance: 340, gongRadius: 230, gongSpeed: 300 },
+  mine: { giftReplacementChance: 1 / 50 },
   husk: { wake: 4.7, wakeWithCloserCurse: 3.2, historyDelay: 1.2 },
   collapse: { grace: 3, crack: 3.2, fall: .65, gap: .35 },
   springer: { landingCooldown: 4, jumpWarning: .4 },
@@ -351,7 +360,7 @@ const DIFFICULTIES = [
   entry('extreme', 'エクストリーム', 'EXTREME', '敵が速く、崩壊も早い。慣れてからの挑戦向け。', '△', '#ff798e', { enemySpeed: 1.23, curseEvery: 1, startingShield: 0 }),
 ];
 const ENEMIES = [
-  entry('bell','ベル','BELL','鎖に包まれた鐘。触れると打ち上げられ、近くのギフトを回収。連続4回は危険。','♧','#d5bd82',{from:1,max:1}),
+  entry('bell','ベル','BELL','鎖に包まれた鐘。1秒ごとに近くの足場へ転移。触れると打ち上げられ、近くのギフトを回収。連続4回は危険。','♧','#d5bd82',{from:1,max:1}),
   entry('mart','マート','MART','地形をすり抜け、ゆっくり追う水の魔物。Lv6ごとに大きくなる。','◆','#7ac8e5',{from:1,max:1}),
   entry('icbm','ICBM','ICBM',`${TUNING.icbm.lockOn}秒追尾して照準を固定。さらに${TUNING.icbm.drop}秒後に爆発。爆発後${TUNING.icbm.cooldown}秒で再追尾。赤い円から離れよう。`,'⊕','#f39f65',{from:1,max:2}),
   entry('husk','ハスク','HUSK','追跡開始時に紫の光と音で出現し、1.2秒前の動きをコピーする。逆走に注意。Lv10から追跡する数が増える。','♙','#c4a0ff',{from:1,max:2}),
@@ -371,7 +380,10 @@ const CURSES = [
  entry('closerHusk','迫るハスク','CLOSER HUSK','ハスクとの間隔が0.6秒へ短縮。逆走がさらに危険になる。','◌','#be9dff',{from:1,enemies:['husk'],excludes:['furtherHusk']}),
  entry('furtherHusk','遠のくハスク','FURTHER HUSK','ハスクとの間隔が1.6秒になる。後ろの隊列は長くなる。','◌','#be9dff',{from:1,enemies:['husk'],excludes:['closerHusk']}),
  entry('biggerBlast','大きな爆風','BIGGER BLAST','ICBMの爆風が広がる。2段階まで累積する。','⊙','#ffb77b',{from:5,enemies:['icbm'],max:2}),
- entry('moreMines','増える地雷','MORE TRIPMINES','地雷が2倍に増える。2段階で4倍。カジュアルには出現しない。','✕','#ff8c9a',{from:5,max:2,noCasual:true}),
+ entry('louderBell','もっと鳴り響く','RING EVEN LOUDER','ベルの転移間隔が1秒から0.5秒になる。','♧','#ead79e',{from:1,enemies:['bell']}),
+ entry('missileSilo','ミサイルミサイロ','MISSILE MISSILE SILO','各フロアに現れるICBMの数が3倍になる。','⊕','#ffad7b',{from:1,enemies:['icbm']}),
+ entry('mightyGong','マイティ・ゴング','MIGHTY GONG','ベルの大きさが2倍。転移するたびに強い衝撃波で周囲を吹き飛ばす。','◉','#f4d58c',{from:1,enemies:['bell']}),
+ entry('moreMines','増える地雷','MORE TRIPMINES','ギフトが地雷に変わる確率が2倍に増える。2段階で4倍。カジュアルでは選択不可。','✕','#ff8c9a',{from:5,max:2,noCasual:true}),
  entry('biggerMarts','大きなマート','BIGGER MARTS','マートが1.5倍に巨大化し、接触しやすくなる。','◆','#83cadb',{from:1,enemies:['mart']}),
  entry('springloaded','強化された衝撃波','SPRINGLOADED','着地の衝撃波が拡大し、跳ぶときにも衝撃波が出る。','✳','#c9b3ff',{from:5,enemies:['springer']}),
  entry('shotgun','散弾','SHOTGUN','ガーディアンの光弾が扇状に広がる。','⁙','#ffb4d1',{from:5,enemies:['guardian']}),
@@ -562,7 +574,7 @@ class Game {
     s.player = this._player();
     s.player.shield = this._difficulty().startingShield + this._up('shield');
     this._history = [];
-    const world=generateWorld({level,difficulty:s.difficulty,activeCurses:s.activeCurses,upgrades:s.upgrades,rng:this._rng});Object.assign(s,world);
+    const world=generateWorld({level,difficulty:s.difficulty,activeCurses:s.activeCurses,upgrades:s.upgrades,mineChance:TUNING.mine.giftReplacementChance,rng:this._rng});Object.assign(s,world);
     this._planCollapse();
     s.player.airJumps=this._jumpCapacity();
     s.progressionEvents=MILESTONES.filter(m=>m.level===level).map(m=>m.name);
@@ -570,7 +582,7 @@ class Game {
     const spawnTiles = s.tiles.filter(t => !t.isBridge && t.distance >= 2);
     for (let i = 0; i < s.activeEnemies.length; i++) {
       const type=s.activeEnemies[i],room=s.rooms.filter(r=>r.distance>=2)[(i*3)%Math.max(1,s.rooms.filter(r=>r.distance>=2).length)]||s.rooms[1];
-      const copies=type==='husk'?1+(level>=10?1:0)+(level>=25?1:0):type==='icbm'?1+(level>=16?1:0):type==='springer'?1+(level>=20?1:0):1;
+      const copies=type==='husk'?1+(level>=10?1:0)+(level>=25?1:0):type==='icbm'?(1+(level>=16?1:0))*(this._has('missileSilo')?3:1):type==='springer'?1+(level>=20?1:0):1;
       for(let j=0;j<copies;j++){let foe=this._spawnEnemy(type,room.anchor);}
     }
     
@@ -599,11 +611,12 @@ class Game {
   _spawnEnemy(type, tile, temporary = false) {
     const definition = ENEMIES.find(e => e.id === type), index = this.state.enemies.length;
     const enemy = { id: `enemy-${++this._uid}`, type, x: tile.x, y: tile.y, z: type === 'mart' ? 18 : 0, radius: type === 'bell' ? 18 : 14,
-      state: 'idle', timer: type === 'husk' ? (this._has('closerHusk') ? TUNING.husk.wakeWithCloserCurse : TUNING.husk.wake) : type === 'bell' ? 9 : this._random(3.5, 6),
+      state: 'idle', timer: type === 'husk' ? (this._has('closerHusk') ? TUNING.husk.wakeWithCloserCurse : TUNING.husk.wake) : type === 'bell' ? (this._has('louderBell')?TUNING.bell.echoTeleportCooldown:TUNING.bell.teleportCooldown) : this._random(3.5, 6),
       warningX: tile.x, warningY: tile.y, targetX: 0, targetY: 0, dirX: 1, dirY: 0, phase: index * 1.8,
       cooldown: 0, tell: 0, rings: 0, temporary, historyDelay:TUNING.husk.historyDelay, label: definition?.label || type, color: definition?.color || '#ffffff' };
     if(type==='husk'){enemy.hidden=true;enemy.historyDelay=(this.state.enemies.filter(e=>e.type==='husk').length+1)*(this._has('closerHusk')?.6:this._has('furtherHusk')?1.6:TUNING.husk.historyDelay);}
     if(type==='mart'){enemy.scale=.72*(1+Math.min(5,Math.floor(this.state.level/6))*.13)*(this._has('biggerMarts')?1.5:1);enemy.radius*=enemy.scale;}
+    if(type==='bell'&&this._has('mightyGong'))enemy.radius*=2;
     if(type==='icbm'){enemy.hidden=true;enemy.z=650;}
     if(type==='springer'){enemy.radius=20;enemy.timer=this._random(.35,.7);enemy.surfaceHeight=floorHeight(this.tileAt(enemy.x,enemy.y),enemy.x,enemy.y);}
     this.state.enemies.push(enemy);
@@ -792,7 +805,7 @@ class Game {
         e.x += to.x * move * dt; e.y += to.y * move * dt; e.z = 17 + Math.sin(s.time * 4 + e.phase) * 6;
         if (dist(e, p) < e.radius + p.radius && this._touchesHeight(e,-10,22)) this._hit('マートに触れた', e);
       } else if (e.type === 'bell') {
-        e.z = Math.sin(s.time * 2.4 + e.phase) * 3;
+        e.z = (e.floatHeight||0)+Math.sin(s.time * 2.4 + e.phase) * 3;
         if (dist(e, p) < e.radius + p.radius && this._touchesHeight(e,-8,20) && e.cooldown <= 0 && s.floorTime > 1.5) {
           e.rings = (e.rings || 0) + 1; e.cooldown = 2.8;
           if (e.rings >= 4) { this._hit('ベルを4回続けて鳴らした', e); e.rings = 0; }
@@ -803,8 +816,18 @@ class Game {
           }
         }
         if (e.timer <= 0) {
-          const live=s.rooms.filter(r=>r.distance>=1&&dist(r.anchor,p)>110&&this.tileAt(r.anchor.x,r.anchor.y));const target=this._pick(live);if(target){e.x=target.anchor.x;e.y=target.anchor.y;}
-          e.timer = 9; e.rings = 0;
+          const cfg=TUNING.bell,live=s.tiles.filter(t=>!t.dead&&t.collapseState!=='falling'&&t.w>e.radius*2+12&&t.h>e.radius*2+12&&Math.hypot(t.x-p.x,t.y-p.y)<cfg.teleportMaxDistance+Math.hypot(t.w,t.h)/2);
+          let destination=null,best=Infinity;
+          for(const tile of live)for(let attempt=0;attempt<8;attempt++){
+            const x=this._random(tile.x-tile.w/2+e.radius+4,tile.x+tile.w/2-e.radius-4),y=this._random(tile.y-tile.h/2+e.radius+4,tile.y+tile.h/2-e.radius-4),distance=Math.hypot(x-p.x,y-p.y);
+            if(distance<cfg.teleportMinDistance||distance>cfg.teleportMaxDistance)continue;
+            const score=Math.abs(distance-cfg.teleportTargetDistance)+this._random(0,35);
+            if(score<best){best=score;destination={x,y,tile};}
+          }
+          if(destination){e.x=destination.x;e.y=destination.y;e.surfaceHeight=floorHeight(this.tileAt(e.x,e.y)||destination.tile,e.x,e.y);e.floatHeight=0;}
+          else{const angle=this._random(0,TAU);e.x=p.x+Math.cos(angle)*cfg.teleportTargetDistance;e.y=p.y+Math.sin(angle)*cfg.teleportTargetDistance;e.surfaceHeight=0;e.floatHeight=40;}
+          if(this._has('mightyGong')){this._hazard('ring',e.x,e.y,TUNING.bell.gongRadius,1.2,{ringRadius:0,ringWidth:18,speed:TUNING.bell.gongSpeed,gong:true,surfaceHeight:e.surfaceHeight});this._emit('shockwave',{x:e.x,y:e.y,radius:TUNING.bell.gongRadius,elevation:e.surfaceHeight});}
+          e.timer = this._has('louderBell')?TUNING.bell.echoTeleportCooldown:TUNING.bell.teleportCooldown; e.rings = 0;
         }
       } else if (e.type === 'husk') {
         const delay=e.historyDelay||TUNING.husk.historyDelay;if(e.state==='idle'&&!s.hasMoved){e.timer+=dt;continue;}
@@ -828,7 +851,7 @@ class Game {
         else if (e.state === 'charging') {
           e.x += e.dirX * 480 * speed * dt; e.y += e.dirY * 480 * speed * dt;
           if (dist(e, p) < e.radius + p.radius && this._touchesHeight(e,0,34)) this._hit('ベイビーの突進', e);
-          if(e.timer<=0){if(s.difficulty==='extreme'&&!e.followup){e.followup=true;e.state='warning';e.timer=.55;const dir=norm(p.x-e.x,p.y-e.y);e.dirX=dir.x;e.dirY=dir.y;this._hazard('charge-warning',e.x,e.y,12,.55,{targetX:e.x+dir.x*620,targetY:e.y+dir.y*620,source:e.id});}else{e.state='idle';e.timer=4.2/speed;e.followup=false;}}
+          if(e.timer<=0){if(s.difficulty==='extreme'&&!e.followup){e.followup=true;e.state='warning';e.timer=.55;const dir=norm(p.x-e.x,p.y-e.y);e.dirX=dir.x;e.dirY=dir.y;this._hazard('charge-warning',e.x,e.y,12,.55,{targetX:e.x+dir.x*620,targetY:e.y+dir.y*620,source:e.id});}else{e.state='idle';e.timer=TUNING.baby.dashCooldown/speed;e.followup=false;}}
         }
       } else if(e.type==='icbm'){
         if(e.state==='idle'&&e.timer<=0){e.state='tracking';e.timer=TUNING.icbm.lockOn;e.hidden=true;}
@@ -902,7 +925,7 @@ class Game {
         if (h.delay <= 0) {
           h.ringRadius += (h.speed || 180) * dt;
           if (Math.abs(dist(h, p) - h.ringRadius) < h.ringWidth + p.radius && this._touchesHeight(h,-4,20)) {
-            if(!h.hit){h.hit=true;const direction=norm(p.x-h.x,p.y-h.y);p.knockX=direction.x*(s.difficulty==='extreme'?220:130);p.knockY=direction.y*(s.difficulty==='extreme'?220:130);p.vz=Math.max(p.vz,190);p.z=Math.max(1,p.z);p.grounded=false;this._emit('warning',{text:'衝撃波で吹き飛ばされた！',x:p.x,y:p.y});}
+            if(!h.hit){h.hit=true;const direction=dist(h,p)<.001?norm(p.dirX||1,p.dirY||0):norm(p.x-h.x,p.y-h.y);const force=h.gong?360:(s.difficulty==='extreme'?220:130);p.knockX=direction.x*force;p.knockY=direction.y*force;p.vz=Math.max(p.vz,h.gong?270:190);p.z=Math.max(1,p.z);p.grounded=false;this._emit('warning',{text:'衝撃波で吹き飛ばされた！',x:p.x,y:p.y});}
           }
           if (h.ringRadius > h.radius) h.life = 0;
         }
@@ -1202,14 +1225,14 @@ class Renderer{
  c.save();c.globalAlpha=p.invincible>0&&Math.sin(t*32)<0?.45:1;if(p.fallTime>0){c.globalAlpha*=Math.max(.1,1-p.fallTime*1.5);c.translate(x,y-z*.58);const scale=Math.max(.55,1-p.fallTime*.7);c.scale(scale,scale);drawBlockAvatar(c,{time:t,speed,dx:p.dirX,dy:p.dirY,state,colors:this.avatarColors,classId:s.classId,ghost});}else drawBlockAvatar(c,{x,y:y-z*.58,time:t,speed,dx:p.dirX,dy:p.dirY,state,verticalSpeed:p.vz,landing:p.landTime||0,colors:this.avatarColors,classId:s.classId,ghost});c.restore();
  if(s.phase==='menu')this.label(c,x,y-67,this.playerName,'#c5f7ce');else this.label(c,x,y+36,this.playerName,ghost?'#d7b8f4':'#d6efd8');
  }
- enemy(c,e,s,t){if(e.hidden||e.state==='inactive'||e.active===false)return;if(e.type==='icbm'){this.missile(c,e,s,t);return;}const x=e.x||0,y=e.y||0,type=e.type;if(type==='springer'){this.springer(c,e,s,t);return;}if(type==='guardian'){this.guardian(c,e,s,t);return;}let size=type==='mart'?62*(e.scale||1):type==='flesh'?68:type==='sigil'?78:65;circle(c,x,y+7,e.radius||12,'#0a101f75');const warning=['warning','observing','tracking'].includes(e.state),attack=['charge','charging','firing'].includes(e.state);if(warning)circle(c,x,y,26+Math.sin(t*8)*2,null,type==='operator'?'#f4d685':'#ed94ac77',1);drawEnemyArt(c,type,{x,y:y-(e.z||0)*.5+Math.sin(t*2+x*.01)*2,size,time:e.animTime??t,pose:e.pose||'idle',dx:e.dirX||0,dy:e.dirY??1,landing:e.landTime||0,verticalSpeed:e.vz||0,frame:e.type==='operator'&&e.state==='observing'&&e.timer<1?2:attack?2:warning?1:0});if(Math.hypot(x-(s.player?.x||0),y-(s.player?.y||0))<220)this.label(c,x,y+24,type.toUpperCase(),type==='bell'?'#ded3b6':'#e3b9cb');}
+ enemy(c,e,s,t){if(e.hidden||e.state==='inactive'||e.active===false)return;if(e.type==='icbm'){this.missile(c,e,s,t);return;}const x=e.x||0,y=e.y||0,type=e.type;if(type==='springer'){this.springer(c,e,s,t);return;}if(type==='guardian'){this.guardian(c,e,s,t);return;}let size=type==='mart'?62*(e.scale||1):type==='bell'?65*(e.radius||18)/18:type==='flesh'?68:type==='sigil'?78:65;circle(c,x,y+7,e.radius||12,'#0a101f75');const warning=['warning','observing','tracking'].includes(e.state),attack=['charge','charging','firing'].includes(e.state);if(warning)circle(c,x,y,26+Math.sin(t*8)*2,null,type==='operator'?'#f4d685':'#ed94ac77',1);drawEnemyArt(c,type,{x,y:y-(e.z||0)*.5+Math.sin(t*2+x*.01)*2,size,time:e.animTime??t,pose:e.pose||'idle',dx:e.dirX||0,dy:e.dirY??1,landing:e.landTime||0,verticalSpeed:e.vz||0,frame:e.type==='operator'&&e.state==='observing'&&e.timer<1?2:attack?2:warning?1:0});if(Math.hypot(x-(s.player?.x||0),y-(s.player?.y||0))<220)this.label(c,x,y+24,type.toUpperCase(),type==='bell'?'#ded3b6':'#e3b9cb');}
  guardian(c,e,s,t){const x=e.x,y=e.y,z=e.z||0,moving=e.state==='moving',sway=Math.sin(t*4+e.phase);circle(c,x,y+8,16,'#0a101f55');if(moving){const angle=Math.atan2(e.targetY-e.startY,e.targetX-e.startX);for(let i=1;i<=4;i++){const u=Math.max(0,(e.moveProgress||0)-i*.045),ease=u*u*(3-2*u),xx=e.startX+(e.targetX-e.startX)*ease,yy=e.startY+(e.targetY-e.startY)*ease-z*.58-(e.startHeight+(e.targetHeight-e.startHeight)*ease-(e.surfaceHeight||0))*.58;c.save();c.translate(xx,yy-30);c.rotate(angle+i);c.globalAlpha=.45-i*.07;c.fillStyle=i%2?'#f2bdd4':'#a7c39e';c.beginPath();c.ellipse(0,0,5,2,0,0,TAU);c.fill();c.restore();}}c.save();c.translate(x-(Math.cos(e.aimAngle||0)*(e.recoil||0)*6),y-z*.58);c.rotate(moving?clamp((e.moveX||0)*.018,-.16,.16):sway*.025);c.scale(1+sway*.012,1-sway*.012);drawEnemyArt(c,'guardian',{x:0,y:0,size:68,frame:e.state==='warning'?1:e.state==='firing'?2:0});c.restore();for(let i=0;i<3;i++){const a=t*.9+i*2.1;c.fillStyle=i%2?'#eeb5d399':'#b5cea277';c.beginPath();c.ellipse(x+Math.cos(a)*25,y-z*.58-46+Math.sin(a*1.2)*17,2.5,1.3,a,0,TAU);c.fill();}if(Math.hypot(x-s.player.x,y-s.player.y)<300)this.label(c,x,y+28,'GUARDIAN','#edbad4');}
  springer(c,e,s,t){const x=e.x||0,y=e.y||0,z=e.z||0,air=e.state==='jumping',height=e.surfaceHeight||0;circle(c,x,y+7,Math.max(8,20-z*.065),'#070e1c66');if(air){const targetY=e.targetY-(e.targetHeight-height)*.58;circle(c,e.targetX,targetY,27,'#b8a4f511','#d3b7f055',1);for(let i=1;i<=3;i++){const u=Math.max(0,(e.jumpProgress||0)-i*.045),ease=u*u*(3-2*u),xx=e.startX+(e.targetX-e.startX)*ease,yy=e.startY+(e.targetY-e.startY)*ease-Math.sin(u*Math.PI)*130*.58-(e.startHeight+(e.targetHeight-e.startHeight)*ease-height)*.58;circle(c,xx,yy,3-i*.5,'#d4b7ef55');}}c.save();c.translate(x,y-z*.58);const squash=e.state==='warning'?1-Math.sin(clamp(1-e.timer/TUNING.springer.jumpWarning,0,1)*Math.PI/2)*.13:e.landTime?1-e.landTime*.6:1;c.scale(1+(1-squash)*.5,squash);if(air)c.rotate(Math.sin((e.jumpProgress||0)*Math.PI)*Math.sign(e.targetX-e.startX)*.18);drawEnemyArt(c,'springer',{x:0,y:0,size:65,frame:e.state==='warning'?1:0});c.restore();if(Math.hypot(x-s.player.x,y-s.player.y)<300)this.label(c,x,y+30,'SPRINGER','#d3bfdc');}
  missile(c,e,s,t){const x=e.x,y=e.y-e.z*.58;circle(c,x,e.y,18,'#ffb49b13','#ffb19b66',1);c.save();const fire=c.createLinearGradient(0,y-145,0,y-40);fire.addColorStop(0,'#ff996000');fire.addColorStop(.7,'#ffb36a55');fire.addColorStop(1,'#fff3bb');c.fillStyle=fire;c.beginPath();c.moveTo(x-3,y-45);c.lineTo(x-10-Math.sin(t*31)*3,y-110);c.lineTo(x,y-155);c.lineTo(x+9,y-105);c.lineTo(x+3,y-45);c.fill();for(let i=0;i<3;i++)line(c,x+(i-1)*17,y-45-i*15,x+(i-1)*17,y-145-i*17,'#d5ecff44',1);c.translate(x,y);c.rotate(Math.PI);drawEnemyArt(c,'icbm',{x:0,y:52,size:44,frame:2});c.restore();}
  hazard(c,a,s,t){const x=a.x||0,y=(a.y||0)-(['projectile','beam','beam-warning'].includes(a.type)?(a.z||0)*.58:0),r=a.radius||35,type=a.type;let life=a.life??1,max=a.maxLife??3;let progress=clamp(1-life/max,0,1);if(type==='blast-warning'||type==='ring-warning'||type==='icbmWarning'){let color=type==='ring-warning'?'#d6b7fc':'#ff8198';circle(c,x,y,r,'#ff5d7516',color,1.5);circle(c,x,y,r*(1-progress),null,color+'77',1);c.save();c.translate(x,y);c.rotate(t*.7);for(let i=0;i<4;i++){c.rotate(TAU/4);line(c,r-9,0,r+7,0,color,2);}c.restore();line(c,x-8,y,x+8,y,color);line(c,x,y-8,x,y+8,color);this.label(c,x,y-r-11,type==='ring-warning'?'JUMP':a.icbm?'IMPACT '+Math.max(0,life).toFixed(1)+'s':'LOCK ON',color);}
  else if(type==='charge-warning'){c.save();c.setLineDash([8,7]);line(c,x,y,a.targetX??a.endX??x,a.targetY??a.endY??y,'#ff8295b0',3);c.restore();circle(c,x,y,23,null,'#f99ca877',1);}
  else if(type==='blast'){const age=clamp(1-life/max,0,1),size=r*(.55+age*.6),g=c.createRadialGradient(x,y,0,x,y,size);g.addColorStop(0,'#fff9dcdd');g.addColorStop(.2,'#ffdd97bb');g.addColorStop(.55,'#fb8d6055');g.addColorStop(1,'#df596900');c.fillStyle=g;c.fillRect(x-size,y-size,size*2,size*2);circle(c,x,y,size,null,'#ffe6bd99',3*(1-age)+1);}
- else if(type==='ring'){let rr=a.ringRadius??r;circle(c,x,y,rr,null,'#ecc0fd',a.ringWidth||4);circle(c,x,y,rr-5,null,'#e39ffc35',7);}
+ else if(type==='ring'){let rr=a.ringRadius??r,color=a.gong?'#ffe2a0':'#ecc0fd';circle(c,x,y,rr,null,color,a.ringWidth||4);circle(c,x,y,rr-5,null,a.gong?'#ffd47f55':'#e39ffc35',7);}
  else if(type==='projectile'){circle(c,x,y,a.radius||5,'#ffd4ee','#fff5fa',1);line(c,x,y,x-(a.vx||0)*.035,y-(a.vy||0)*.035,'#ee9ccc66',4);}
  else if(type==='mine'){if(a.armed){circle(c,x,y,r,'#ff829522','#ff8ea9',2);circle(c,x,y,r*Math.max(0,a.timer/.8),null,'#ffe4b6',2);this.label(c,x,y-r-11,'ESCAPE '+Math.max(0,a.timer).toFixed(1),'#ffb8c9');}c.save();c.translate(x,y);c.rotate(Math.PI/4);c.fillStyle='#292236';c.strokeStyle='#ff7aaa';c.lineWidth=2;c.fillRect(-10,-10,20,20);c.strokeRect(-10,-10,20,20);c.restore();circle(c,x,y,3,'#ffb8df');}
  else if(type==='teleport-warning'){circle(c,x,y,24,'#e5f4ff22','#f4fbff',1.5);for(let i=0;i<8;i++){let a=i*TAU/8+t*3;circle(c,x+Math.cos(a)*28,y+Math.sin(a)*28,2,'#f3fcff');}}
