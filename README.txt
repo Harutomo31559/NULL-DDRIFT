@@ -1,1 +1,1 @@
-NULL DRIFT v13. Replace the index.html in the root of the GitHub Pages repository NULL-DDRIFT and commit the change. Bell teleport cooldown: 10 seconds normally, 5 seconds with Ring Even Louder curse.
+NULL DRIFT v14. Replace the index.html in the root of the GitHub Pages repository NULL-DDRIFT and commit. Mobile UI text selection and double-tap highlight are disabled; editable text/color fields remain usable.

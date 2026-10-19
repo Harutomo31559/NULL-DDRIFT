@@ -63,6 +63,13 @@
   .avatar-modal .avatar-studio{grid-template-columns:1fr}
   .avatar-stage canvas{width:160px}
 }
+
+/* Keep rapid taps on the game UI from selecting text or opening mobile callouts. */
+#app,#app *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#app{touch-action:manipulation}
+#app button,#app a{touch-action:manipulation}
+#app .joystick,#app .touch-actions button{touch-action:none}
+#app input[type=text],#app input[type=color],#app textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 </style>
 </head>
 <body>
