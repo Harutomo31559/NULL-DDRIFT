@@ -1,6 +1,1 @@
-NULL DRIFT v20
-
-ZIP内のindex.htmlをGitHubリポジトリ直下のindex.htmlと差し替えてください。
-追加ファイルは不要です。
-
-変更点：煉獄の祭壇の敵増加数を「四捨五入(レベル÷5)×2、最大10体」に変更。ベイビーの警告と突進に専用音を追加。Lv.20から新敵スクラップモーを追加し、汽笛とオレンジの予告光線、出現、突進、追従する2本の平行レーザーを実装。
+NULL DRIFT v23. Replace the repository root index.html with this file to update GitHub Pages. This package contains the complete standalone browser game.
