@@ -70,6 +70,37 @@
 #app button,#app a{touch-action:manipulation}
 #app .joystick,#app .touch-actions button{touch-action:none}
 #app input[type=text],#app input[type=color],#app textarea{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+
+html,body,#app{overflow-x:hidden;overscroll-behavior-x:none}
+@media (orientation:landscape) and (pointer:coarse){.menu-screen{overflow-x:hidden;touch-action:pan-y}}
+#settings-overlay{align-items:flex-start}
+#settings-overlay>.modal{margin:auto}
+.keybind-settings,.touch-settings{border-top:1px solid #9cc6ba28;margin:19px 0 13px;padding-top:13px}
+.keybind-settings h3,.touch-settings h3{font-size:13px;margin:0 0 6px;color:#d4ecdc}
+.keybind-settings p{font-size:10px;line-height:1.6;color:#92a99b;margin:0 0 11px}
+.keybind-grid{display:grid;grid-template-columns:1fr minmax(90px,130px);gap:6px 10px;align-items:center}
+.keybind-grid span{font-size:11px;color:#bccdc4}
+.keybind-grid button{padding:7px 9px;font-size:10px;min-height:34px}
+.keybind-settings>.text-button{margin:11px 0 0}
+.touch-settings button,.layout-open{width:100%;justify-content:center;padding:10px;font-size:11px}
+.layout-open{margin-bottom:14px}
+.touch-dpad{position:absolute;left:24px;bottom:38px;width:128px;height:128px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;touch-action:none}
+.touch-dpad button{border:1px solid #b7d6c166;border-radius:8px;background:#183323a8;color:#c5ffcf;font-size:18px;touch-action:none;backdrop-filter:blur(3px)}
+.touch-dpad button[data-dpad=up]{grid-column:2;grid-row:1}
+.touch-dpad button[data-dpad=left]{grid-column:1;grid-row:2}
+.touch-dpad button[data-dpad=right]{grid-column:3;grid-row:2}
+.touch-dpad button[data-dpad=down]{grid-column:2;grid-row:3}
+.touch-dpad button.pressed{background:#afffba88;color:#122319}
+.touch-actions button[data-touch=ability]{width:58px;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;background:#a9ffd02f;border-color:#b4ffcfaa;color:#d6ffe3;font-size:22px;line-height:1}
+.touch-actions button[data-touch=ability] small{font-size:9px;font-weight:700;line-height:1.2;letter-spacing:1px}
+.layout-overlay{position:absolute;inset:0;z-index:80;pointer-events:none}
+.layout-panel{position:absolute;top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));display:flex;align-items:center;gap:8px;max-width:calc(100% - 16px);padding:8px 10px;border-radius:9px;background:#0b1822ed;border:1px solid #a6e9c388;box-shadow:0 6px 25px #0008;pointer-events:auto}
+.layout-panel strong{font-size:11px;white-space:nowrap}.layout-panel span{font-size:9px;color:#b7c9bd;white-space:nowrap}
+.layout-panel button{padding:7px 9px;border:1px solid #9ad5b877;border-radius:5px;background:#203c36;color:#d7ffe3;font-size:10px;white-space:nowrap}
+.layout-editing .game-hud{z-index:70}
+.layout-editing .game-hud [data-layout-id]{pointer-events:auto;touch-action:none;outline:1px dashed #c6ffd1a8;outline-offset:3px;cursor:grab}
+.layout-editing .game-hud [data-layout-id]:active{cursor:grabbing}
+@media(max-width:600px){.layout-panel{gap:4px;padding:6px}.layout-panel span{display:none}.layout-panel button{padding:6px;font-size:9px}.touch-dpad{left:16px;bottom:32px;width:112px;height:112px}}
 </style>
 </head>
 <body>
@@ -109,21 +140,21 @@
     </section>
 
     <section id="game-hud" class="game-hud hidden" aria-label="ゲーム情報">
-      <div class="floor-hud"><div class="floor-number" id="floor-number">01</div><div class="floor-details"><p>FLOOR <span id="phase-badge">COLLECT</span></p><strong id="hud-objective">ギフトを集める</strong><div class="collect-track"><i id="collect-progress"></i></div><small id="collect-count">0 / 0 COLLECTED</small></div></div>
-      <div class="objective-banner" id="objective-banner">すべてのギフトを集めて、出口へ。</div>
-      <div class="run-stats"><span class="gold-stat"><i>✧</i><b id="hud-gold">0</b></span><span id="hud-time">00:00</span><button id="pause-button" class="icon-button" aria-label="一時停止"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button></div>
-      <div class="threat-list" id="threat-list"></div>
-      <div id="interact-prompt" class="interact-prompt hidden"><kbd>E</kbd><span></span></div>
-      <div class="ability-bar"><span class="jump-tip"><small id="jump-status"></small><kbd>SPACE</kbd> ジャンプ</span><div class="ability-meter"><span class="ability-icon" id="ability-icon">↗</span><div><span class="ability-name" id="ability-name">DASH</span><div class="ability-track"><i id="ability-progress"></i></div></div><kbd id="ability-key">SHIFT</kbd></div></div>
-      <div class="map-frame"><div class="map-caption">AREA SCAN <span id="map-state">LIVE</span></div><canvas id="minimap" width="144" height="144" aria-label="フロアのミニマップ"></canvas></div>
-      <div class="touch-controls" aria-label="タッチ操作"><div id="joystick" class="joystick"><div id="joystick-knob"></div></div><div class="touch-actions"><button id="alt-touch" class="hidden" data-touch="altAbility" aria-label="上位能力">F</button><button data-touch="interact" aria-label="調べる">E</button><button data-touch="ability" aria-label="アビリティ">↗</button><button data-touch="jump" aria-label="ジャンプ">↑</button></div></div>
+      <div class="floor-hud" data-layout-id="floor"><div class="floor-number" id="floor-number">01</div><div class="floor-details"><p>FLOOR <span id="phase-badge">COLLECT</span></p><strong id="hud-objective">ギフトを集める</strong><div class="collect-track"><i id="collect-progress"></i></div><small id="collect-count">0 / 0 COLLECTED</small></div></div>
+      <div class="objective-banner" id="objective-banner" data-layout-id="objective">すべてのギフトを集めて、出口へ。</div>
+      <div class="run-stats" data-layout-id="stats"><span class="gold-stat"><i>✧</i><b id="hud-gold">0</b></span><span id="hud-time">00:00</span><button id="pause-button" class="icon-button" aria-label="一時停止"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg></button></div>
+      <div class="threat-list" id="threat-list" data-layout-id="threats"></div>
+      <div id="interact-prompt" class="interact-prompt hidden"><kbd id="interact-key">E</kbd><span></span></div>
+      <div class="ability-bar" data-layout-id="ability-meter"><span class="jump-tip"><small id="jump-status"></small><kbd id="jump-key">SPACE</kbd> ジャンプ</span><div class="ability-meter"><span class="ability-icon" id="ability-icon">↗</span><div><span class="ability-name" id="ability-name">DASH</span><div class="ability-track"><i id="ability-progress"></i></div></div><kbd id="ability-key">SHIFT</kbd></div></div>
+      <div class="map-frame" data-layout-id="map"><div class="map-caption">AREA SCAN <span id="map-state">LIVE</span></div><canvas id="minimap" width="144" height="144" aria-label="フロアのミニマップ"></canvas></div>
+      <div class="touch-controls" aria-label="タッチ操作"><div id="joystick" class="joystick" data-layout-id="joystick"><div id="joystick-knob"></div></div><div id="touch-dpad" class="touch-dpad hidden" data-layout-id="dpad" aria-label="方向キー"><button data-dpad="up" aria-label="上へ移動">▲</button><button data-dpad="left" aria-label="左へ移動">◀</button><button data-dpad="right" aria-label="右へ移動">▶</button><button data-dpad="down" aria-label="下へ移動">▼</button></div><div class="touch-actions"><button id="alt-touch" class="hidden" data-touch="altAbility" data-layout-id="altAbility" aria-label="上位能力">F</button><button data-touch="interact" data-layout-id="interact" aria-label="調べる">E</button><button data-touch="ability" data-layout-id="ability" aria-label="アビリティ"><span>✦</span><small>能力</small></button><button data-touch="jump" data-layout-id="jump" aria-label="ジャンプ">↑</button></div></div>
     </section>
 
     <div id="toast-region" class="toast-region" aria-live="polite"></div>
     <div id="phase-overlay" class="overlay hidden"></div>
     <div id="pause-overlay" class="overlay hidden"></div>
     <div id="help-overlay" class="overlay hidden"></div>
-    <div id="avatar-overlay" class="overlay hidden"></div><div id="settings-overlay" class="overlay hidden"></div>
+    <div id="avatar-overlay" class="overlay hidden"></div><div id="settings-overlay" class="overlay hidden"></div><div id="layout-overlay" class="layout-overlay hidden"></div>
     <div id="loading-overlay" class="loading-overlay"><div class="loading-glyph">N</div><p>虚空を生成しています<span>…</span></p><small>GENERATING THE UNKNOWN</small></div>
   </main>
   <script>
@@ -1322,6 +1353,12 @@ const names = (o) => o?.nameJP || o?.name || o?.title || o?.labelEN || o?.label 
 const label = (o) => o?.labelEN || o?.label || '';
 const asArray = (v) => Array.isArray(v) ? v : v && typeof v === 'object' ? Object.entries(v).filter(([,n])=>n).map(([id,n])=>typeof n==='object'?{id,...n}:{id,name:id,count:n}) : [];
 const definitionsFor = (v,defs) => {const result=[];for(const raw of asArray(v)){const o=typeof raw==='string'?{id:raw}:raw;if(!o)continue;const found=result.find(n=>n.id===o.id);if(found)found.count+=number(o.count,1);else result.push({...defs.find(d=>d.id===o.id),...o,count:number(o.count,1)});}return result;};
+const KEY_ACTIONS=[['up','上へ移動'],['left','左へ移動'],['down','下へ移動'],['right','右へ移動'],['jump','ジャンプ'],['ability','アビリティ'],['altAbility','上位能力'],['interact','調べる'],['pause','一時停止']];
+const DEFAULT_KEYBINDS={up:'KeyW',left:'KeyA',down:'KeyS',right:'KeyD',jump:'Space',ability:'ShiftLeft',altAbility:'KeyF',interact:'KeyE',pause:'Escape'};
+const keyName=code=>({Space:'SPACE',Escape:'ESC',ShiftLeft:'左SHIFT',ShiftRight:'右SHIFT',ControlLeft:'左CTRL',ControlRight:'右CTRL',AltLeft:'左ALT',AltRight:'右ALT',ArrowUp:'↑',ArrowDown:'↓',ArrowLeft:'←',ArrowRight:'→'}[code]||code?.replace(/^Key/,'').replace(/^Digit/,'')||'—');
+function sanitizeKeybinds(raw){const result={...DEFAULT_KEYBINDS},used=new Set();for(const [action] of KEY_ACTIONS){const code=raw?.[action];if(typeof code==='string'&&/^[A-Za-z][A-Za-z0-9]{1,23}$/.test(code)&&!used.has(code)){result[action]=code;used.add(code);}else{const fallback=DEFAULT_KEYBINDS[action];if(!used.has(fallback)){result[action]=fallback;used.add(fallback);}else{const spare=Object.values(DEFAULT_KEYBINDS).find(c=>!used.has(c));result[action]=spare||fallback;used.add(result[action]);}}}return result;}
+const LAYOUT_IDS=['floor','objective','stats','threats','ability-meter','map','joystick','dpad','altAbility','interact','ability','jump'];
+const clampLayout=(value)=>Math.max(-1.5,Math.min(1.5,Number(value)||0));
 
 class UI {
   constructor(callbacks = {}) {
@@ -1334,11 +1371,20 @@ class UI {
     this.reducedMotion = false;
     this.audioValues={volume:.8,musicVolume:.65,effectsVolume:1};
     this.touch = {x:0,y:0,jump:false,ability:false,abilityHeld:false,interact:false};
+    this.dpadHeld=new Set();
     this.phaseKey = '';
     this.pauseVisible = false;
     this.helpVisible = false;
     this.settingsVisible = false;
+    this.layoutVisible = false;
+    this.captureAction = null;
+    this.keybinds={...DEFAULT_KEYBINDS};
+    this.mobileLayout={};
+    this.touchMode='joystick';
     try { this.reducedMotion = localStorage.getItem('null-drift-reduced-motion') === '1'; } catch {}
+    try{this.keybinds=sanitizeKeybinds(JSON.parse(localStorage.getItem('null-drift-keybinds-v1')||'{}'));}catch{}
+    try{const saved=JSON.parse(localStorage.getItem('null-drift-mobile-layout-v1')||'{}');for(const id of LAYOUT_IDS)if(saved?.[id])this.mobileLayout[id]={x:clampLayout(saved[id].x),y:clampLayout(saved[id].y)};}catch{}
+    try{this.touchMode=localStorage.getItem('null-drift-touch-mode')==='dpad'?'dpad':'joystick';}catch{}
     document.documentElement.classList.toggle('reduced-motion',this.reducedMotion);
     $('class-options').innerHTML = classes.map((c,i)=>`<button class="class-option ${i===0?'selected':''}" data-class="${c.id}" role="radio" aria-checked="${i===0}"><canvas width="96" height="112" data-class-icon="${c.id}" role="img" aria-label="${c.name}のアイコン"></canvas><span><strong>${c.name}</strong><small>${c.label}</small></span></button>`).join('');
     this.drawClassIcons();
@@ -1356,11 +1402,16 @@ class UI {
     $('pause-button').addEventListener('click',()=>this.callbacks.onPause?.());
     this.renderSound();
     this.bindTouch();
+    this.applyTouchMode();
+    this.bindLayout();
+    this.applyLayout();
+    addEventListener('resize',()=>this.applyLayout());
     document.addEventListener('keydown',e=>this.keyDown(e),true);
     $('phase-overlay').addEventListener('click',e=>this.phaseClick(e));
     $('pause-overlay').addEventListener('click',e=>this.pauseClick(e));
     $('help-overlay').addEventListener('click',e=>{if(e.target.closest('[data-action="close-help"]'))this.hideHelp();});
     $('settings-overlay').addEventListener('click',e=>this.settingsClick(e));
+    $('layout-overlay').addEventListener('click',e=>{const a=e.target.closest('[data-layout-action]')?.dataset.layoutAction;if(a==='done')this.closeLayoutEditor();else if(a==='reset'){this.mobileLayout={};this.applyLayout();this.saveLayout();}});
     $('settings-overlay').addEventListener('input',e=>{const key=e.target.dataset.audioLevel;if(!['volume','musicVolume','effectsVolume'].includes(key))return;const value=Math.max(0,Math.min(300,Number(e.target.value)))/100;this.audioValues[key]=value;$('audio-value-'+key).textContent=Math.round(value*100)+'%';this.callbacks.onSettings?.({[key]:value});});
     this.setLoading(false);
   }
@@ -1437,13 +1488,13 @@ class UI {
     $('hud-time').textContent=clock(e.elapsed??s.elapsed??s.runTime??s.time);
     const objective=$('objective-banner');
     const observing=asArray(s.enemies).find(n=>n.type==='operator'&&n.state==='observing');
-    objective.textContent=observing?`STOP · 移動と SHIFT を離す　${number(observing.timer).toFixed(1)}s`:e.objective||s.objective||(ghost?`霊体化 ${number(p.abilityTime).toFixed(1)}s · ギフトを拾おう。SHIFTで身体へ戻る。`:collapse?(lap2&&!s.beacon?.open?`黄金ギフトをあと ${Math.max(0,lapGoal-golden)} 個集めると帰還口が開く。`:'フロアが崩れている。光る帰還口へ急げ！'):collected>=total&&total>0?'帰還口が開いた。光るゲートへ進もう。':'紫のギフトをすべて集めて、中央の帰還口へ。');
+    objective.textContent=observing?`STOP · 移動と ${keyName(this.keybinds.ability)} を離す　${number(observing.timer).toFixed(1)}s`:e.objective||s.objective||(ghost?`霊体化 ${number(p.abilityTime).toFixed(1)}s · ギフトを拾おう。${keyName(this.keybinds.ability)}で身体へ戻る。`:collapse?(lap2&&!s.beacon?.open?`黄金ギフトをあと ${Math.max(0,lapGoal-golden)} 個集めると帰還口が開く。`:'フロアが崩れている。光る帰還口へ急げ！'):collected>=total&&total>0?'帰還口が開いた。光るゲートへ進もう。':'紫のギフトをすべて集めて、中央の帰還口へ。');
     objective.classList.toggle('danger',collapse&&!!s.collapseStarted||!!observing);
     const cls=classes.find(c=>c.id===(s.classId||p.classId||this.classId))||classes[0];
     const cooldown=number(p.abilityCooldown??p.cooldown);
     const max=number(p.abilityCooldownMax??p.maxCooldown??s.abilityCooldownMax,number(CLASSES.find(c=>c.id===cls.id)?.cooldown,3.5)*Math.pow(.85,number(s.upgrades?.cooldown)));
     $('ability-name').textContent=ghost?`${number(p.abilityTime).toFixed(1)}s · SPIRIT`:cooldown>.05?`${cooldown.toFixed(1)}s`:cls.ability;
-    if(this.abilityIconClass!==cls.id){this.abilityIconClass=cls.id;$('ability-icon').innerHTML=`<canvas width="96" height="112" data-class-icon="${cls.id}" role="img" aria-label="${cls.name}のアイコン"></canvas>`;this.drawClassIcons();}$('ability-key').textContent=s.upgrades?.ninjaBelt?'SHIFT / F':'SHIFT';$('jump-status').textContent=['H '+Math.round((p.surfaceHeight||0)+(p.z||0)),p.shield?'盾 '+p.shield:'',p.voidShield?'虚空の盾':'',p.airJumps?'空中ジャンプ '+p.airJumps:'',s.classId==='spirit'?'霊体保護 '+(p.spiritProtectionUsed?'0/1':'1/1'):''].filter(Boolean).join(' · ');$('alt-touch').classList.toggle('hidden',!s.upgrades?.ninjaBelt);
+    if(this.abilityIconClass!==cls.id){this.abilityIconClass=cls.id;$('ability-icon').innerHTML=`<canvas width="96" height="112" data-class-icon="${cls.id}" role="img" aria-label="${cls.name}のアイコン"></canvas>`;this.drawClassIcons();}$('ability-key').textContent=s.upgrades?.ninjaBelt?keyName(this.keybinds.ability)+' / '+keyName(this.keybinds.altAbility):keyName(this.keybinds.ability);$('jump-key').textContent=keyName(this.keybinds.jump);$('interact-key').textContent=keyName(this.keybinds.interact);const abilityLabel={diver:'ダイブ',charger:'チャージ',spirit:'幽霊'}[cls.id]||'能力';const abilityTouch=document.querySelector('[data-touch="ability"]');abilityTouch.querySelector('small').textContent=abilityLabel;abilityTouch.setAttribute('aria-label',abilityLabel);$('jump-status').textContent=['H '+Math.round((p.surfaceHeight||0)+(p.z||0)),p.shield?'盾 '+p.shield:'',p.voidShield?'虚空の盾':'',p.airJumps?'空中ジャンプ '+p.airJumps:'',s.classId==='spirit'?'霊体保護 '+(p.spiritProtectionUsed?'0/1':'1/1'):''].filter(Boolean).join(' · ');$('alt-touch').classList.toggle('hidden',!s.upgrades?.ninjaBelt);
     $('ability-progress').style.width=`${Math.max(0,Math.min(100,(ghost?number(p.abilityTime)/3:1-cooldown/max)*100))}%`;
     document.querySelector('.ability-meter').classList.toggle('cooldown',cooldown>.05);
     $('map-state').textContent=collapse?(s.collapseStarted?'DECAY':'WAIT'):(s.terrainCount||s.tiles.length)+' TILES';
@@ -1530,7 +1581,7 @@ class UI {
     this.helpVisible=true;
     this.helpPaused=this.state.phase==='playing'&&!this.extras.paused;
     if(this.helpPaused)this.callbacks.onPause?.();
-    $('help-overlay').innerHTML=`<section class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title"><button class="icon-button modal-close" data-action="close-help" aria-label="遊び方を閉じる">✕</button><p class="modal-eyebrow">FIELD GUIDE / 探索の手引き</p><h2 id="help-title">帰り道までが、探索だ。</h2><div class="help-controls"><div class="control-row"><span>移動</span><span><kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd></span></div><div class="control-row"><span>ジャンプ</span><kbd>SPACE</kbd></div><div class="control-row"><span>クラスのアビリティ</span><kbd>SHIFT</kbd></div><div class="control-row"><span>上位能力（Lv.13の装備）</span><kbd>F</kbd></div><div class="control-row"><span>祭壇を使う</span><kbd>E</kbd></div><div class="control-row"><span>一時停止</span><kbd>ESC</kbd></div><div class="control-row"><span>タッチ操作</span><span>左スティック ＋ 右ボタン</span></div></div><div class="help-steps"><div class="help-step"><span>01 / COLLECT</span><h3>光るギフトを集める</h3><p>通路中央のギフトの列をたどって回収。高低差はスロープでつながる。ミニマップで残りを探そう。</p></div><div class="help-step"><span>02 / ESCAPE</span><h3>崩れる前に、出口へ</h3><p>紫ギフトを集めきった後、3秒間は床が変化しない。その後はひび割れ→落下→消滅を待って次の組へ進む。最大20回。中央のリスポーン足場は崩れない。</p></div><div class="help-step"><span>03 / DESCEND</span><h3>選んだ脅威と、その先へ</h3><p>フロアごとに敵や呪いを選択。脅威は積み重なる。ショップの強化で備えよう。</p></div></div><p class="help-warning"><strong>足場のない虚空へは落ちないように。</strong> スピリットはShiftで3秒間だけ霊体となり、ギフトを拾って自動帰還。幽霊の被弾は各階1回だけ防げる。再び幽霊にはなれるが、その幽霊が被弾すると盾があっても死亡する。床より下に落ちると歩くだけでは戻れない。空中ジャンプやダイブで床の上まで戻れば復帰できる。通常の盾は落下を防がない。Lv.20のドロウンドイージスを買い、保護の祭壇で虚空の盾を得ると一度だけ救われる。</p><details class="field-section"><summary>レベルで広がる探索</summary><div class="milestone-list">${MILESTONES.map(m=>`<div><b>Lv.${m.level}</b><span><strong>${esc(m.name)}</strong><small>${esc(m.detail)}</small></span></div>`).join('')}</div></details><details class="field-section"><summary>装備図鑑 · 価格と前提条件</summary><div class="upgrade-catalog">${UPGRADES.map(o=>`<p><b>Lv.${o.from} · ${esc(o.name)}</b><span>${o.baseCost}G${o.prices?' / 次 '+o.prices.slice(1).join(' / ')+'G':''}${o.casualCost?'（Casual '+o.casualCost+'G〜）':''} · 最大${o.max}</span><small>${esc(o.description)}${o.requires?' 前提：'+Object.keys(o.requires).map(id=>UPGRADES.find(u=>u.id===id)?.name).join('・'):''}</small></p>`).join('')}</div></details><details class="field-section"><summary>敵の図鑑 · 12種類</summary><div class="enemy-catalog">${ENEMIES.map(o=>`<article><canvas width="200" height="200" data-enemy-art="${o.id}"></canvas><span>Lv.${o.from} / ${o.label}</span><h3>${esc(o.name)}</h3><p>${esc(o.description)}</p></article>`).join('')}</div></details><button class="primary-button" data-action="close-help">準備できた <span>↗</span></button></section>`;
+    $('help-overlay').innerHTML=`<section class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title"><button class="icon-button modal-close" data-action="close-help" aria-label="遊び方を閉じる">✕</button><p class="modal-eyebrow">FIELD GUIDE / 探索の手引き</p><h2 id="help-title">帰り道までが、探索だ。</h2><div class="help-controls"><div class="control-row"><span>移動</span><span><kbd>${esc(keyName(this.keybinds.up))} ${esc(keyName(this.keybinds.left))} ${esc(keyName(this.keybinds.down))} ${esc(keyName(this.keybinds.right))}</kbd> / <kbd>↑ ← ↓ →</kbd></span></div><div class="control-row"><span>ジャンプ</span><kbd>${esc(keyName(this.keybinds.jump))}</kbd></div><div class="control-row"><span>クラスのアビリティ</span><kbd>${esc(keyName(this.keybinds.ability))}</kbd></div><div class="control-row"><span>上位能力（Lv.13の装備）</span><kbd>${esc(keyName(this.keybinds.altAbility))}</kbd></div><div class="control-row"><span>祭壇を使う</span><kbd>${esc(keyName(this.keybinds.interact))}</kbd></div><div class="control-row"><span>一時停止</span><kbd>${esc(keyName(this.keybinds.pause))}</kbd></div><div class="control-row"><span>タッチ操作</span><span>スティック／矢印キー ＋ 右ボタン</span></div></div><div class="help-steps"><div class="help-step"><span>01 / COLLECT</span><h3>光るギフトを集める</h3><p>通路中央のギフトの列をたどって回収。高低差はスロープでつながる。ミニマップで残りを探そう。</p></div><div class="help-step"><span>02 / ESCAPE</span><h3>崩れる前に、出口へ</h3><p>紫ギフトを集めきった後、3秒間は床が変化しない。その後はひび割れ→落下→消滅を待って次の組へ進む。最大20回。中央のリスポーン足場は崩れない。</p></div><div class="help-step"><span>03 / DESCEND</span><h3>選んだ脅威と、その先へ</h3><p>フロアごとに敵や呪いを選択。脅威は積み重なる。ショップの強化で備えよう。</p></div></div><p class="help-warning"><strong>足場のない虚空へは落ちないように。</strong> スピリットはShiftで3秒間だけ霊体となり、ギフトを拾って自動帰還。幽霊の被弾は各階1回だけ防げる。再び幽霊にはなれるが、その幽霊が被弾すると盾があっても死亡する。床より下に落ちると歩くだけでは戻れない。空中ジャンプやダイブで床の上まで戻れば復帰できる。通常の盾は落下を防がない。Lv.20のドロウンドイージスを買い、保護の祭壇で虚空の盾を得ると一度だけ救われる。</p><details class="field-section"><summary>レベルで広がる探索</summary><div class="milestone-list">${MILESTONES.map(m=>`<div><b>Lv.${m.level}</b><span><strong>${esc(m.name)}</strong><small>${esc(m.detail)}</small></span></div>`).join('')}</div></details><details class="field-section"><summary>装備図鑑 · 価格と前提条件</summary><div class="upgrade-catalog">${UPGRADES.map(o=>`<p><b>Lv.${o.from} · ${esc(o.name)}</b><span>${o.baseCost}G${o.prices?' / 次 '+o.prices.slice(1).join(' / ')+'G':''}${o.casualCost?'（Casual '+o.casualCost+'G〜）':''} · 最大${o.max}</span><small>${esc(o.description)}${o.requires?' 前提：'+Object.keys(o.requires).map(id=>UPGRADES.find(u=>u.id===id)?.name).join('・'):''}</small></p>`).join('')}</div></details><details class="field-section"><summary>敵の図鑑 · 12種類</summary><div class="enemy-catalog">${ENEMIES.map(o=>`<article><canvas width="200" height="200" data-enemy-art="${o.id}"></canvas><span>Lv.${o.from} / ${o.label}</span><h3>${esc(o.name)}</h3><p>${esc(o.description)}</p></article>`).join('')}</div></details><button class="primary-button" data-action="close-help">準備できた <span>↗</span></button></section>`;
     $('help-overlay').classList.remove('hidden');this.paintEnemyCards();
   }
   hideHelp(resume=true) {this.helpVisible=false;$('help-overlay').classList.add('hidden');if(resume&&this.helpPaused)this.callbacks.onResume?.();this.helpPaused=false;}
@@ -1538,11 +1589,25 @@ class UI {
   showSettings() {if(this.settingsVisible)return;this.settingsVisible=true;this.settingsPaused=this.state.phase==='playing'&&!this.extras.paused;if(this.settingsPaused)this.callbacks.onPause?.();this.renderSettings();$('settings-overlay').classList.remove('hidden');}
   renderSettings() {
     $('settings-overlay').innerHTML=`<section class="modal small" role="dialog" aria-modal="true" aria-labelledby="settings-title"><button class="icon-button modal-close" data-action="close-settings" aria-label="設定を閉じる">✕</button><p class="modal-eyebrow">MAKE IT YOURS</p><h2 id="settings-title">表示とサウンド</h2><div class="settings-row"><div><strong>サウンド</strong><small>ゲーム内の効果音と環境音</small></div><button class="toggle" data-action="toggle-sound" role="switch" aria-checked="${!this.muted}" aria-label="サウンド"><i></i></button></div>${[['volume','全体の音量'],['musicVolume','BGMの音量'],['effectsVolume','効果音の音量']].map(([key,name])=>`<label class="audio-level"><span>${name}<output id="audio-value-${key}">${Math.round(this.audioValues[key]*100)}%</output></span><input type="range" min="0" max="300" step="1" value="${Math.round(this.audioValues[key]*100)}" data-audio-level="${key}" aria-label="${name}"></label>`).join('')}<p class="audio-track">${esc(this.musicTitle||'Nullscape · MIDIアレンジ')}</p><button class="secondary-button audio-preview" data-action="preview-audio">音を試す</button><div class="settings-row"><div><strong>演出を控えめに</strong><small>画面の揺れとフラッシュを軽減</small></div><button class="toggle" data-action="toggle-motion" role="switch" aria-checked="${this.reducedMotion}" aria-label="演出を控えめに"><i></i></button></div><div class="stacked-actions"><button class="primary-button" data-action="close-settings">ゲームへ戻る <span>↗</span></button></div><p class="quiet-note">音量は自動保存。BGMは0%で停止できます。</p></section>`;
+    const actions=$('settings-overlay').querySelector('.stacked-actions');
+    actions.insertAdjacentHTML('beforebegin',`<section class="keybind-settings"><h3>キー割り当て</h3><p>キーボード接続時の操作。変更する項目を押して、使いたいキーを入力。</p><div class="keybind-grid">${KEY_ACTIONS.map(([id,name])=>`<span>${name}</span><button class="secondary-button" data-bind-action="${id}" aria-label="${name}のキーを変更">${this.captureAction===id?'キーを押す…':esc(keyName(this.keybinds[id]))}</button>`).join('')}</div><button class="text-button" data-action="reset-keys">キーを初期設定に戻す</button></section>${this.mobileControlsAvailable()?`<section class="touch-settings"><h3>スマホの移動操作</h3><button class="secondary-button" data-action="toggle-touch-mode">${this.touchMode==='joystick'?'スティック → 矢印キーに変更':'矢印キー → スティックに変更'}</button></section>`:''}${this.mobileControlsAvailable()&&this.state.phase==='playing'?'<button class="secondary-button layout-open" data-action="edit-layout">スマホのプレイ画面UIを配置する</button>':''}`);
   }
-  settingsClick(e) {const a=e.target.closest('[data-action]')?.dataset.action;if(a==='preview-audio')this.callbacks.onAudioPreview?.();else if(a==='close-settings')this.hideSettings();else if(a==='toggle-sound')this.toggleSound();else if(a==='toggle-motion'){this.reducedMotion=!this.reducedMotion;document.documentElement.classList.toggle('reduced-motion',this.reducedMotion);try{localStorage.setItem('null-drift-reduced-motion',this.reducedMotion?'1':'0');}catch{}this.callbacks.onSettings?.({reducedMotion:this.reducedMotion,sound:!this.muted});this.renderSettings();}}
-  hideSettings(resume=true) {this.settingsVisible=false;$('settings-overlay').classList.add('hidden');if(resume&&this.settingsPaused)this.callbacks.onResume?.();this.settingsPaused=false;}
+  settingsClick(e) {const binding=e.target.closest('[data-bind-action]');if(binding){this.captureAction=binding.dataset.bindAction;this.renderSettings();return;}const a=e.target.closest('[data-action]')?.dataset.action;if(a==='preview-audio')this.callbacks.onAudioPreview?.();else if(a==='close-settings')this.hideSettings();else if(a==='toggle-sound')this.toggleSound();else if(a==='edit-layout')this.showLayoutEditor();else if(a==='toggle-touch-mode'){this.touchMode=this.touchMode==='joystick'?'dpad':'joystick';this.applyTouchMode();try{localStorage.setItem('null-drift-touch-mode',this.touchMode);}catch{}this.renderSettings();}else if(a==='reset-keys'){this.keybinds={...DEFAULT_KEYBINDS};this.captureAction=null;this.saveKeybinds();this.renderSettings();}else if(a==='toggle-motion'){this.reducedMotion=!this.reducedMotion;document.documentElement.classList.toggle('reduced-motion',this.reducedMotion);try{localStorage.setItem('null-drift-reduced-motion',this.reducedMotion?'1':'0');}catch{}this.callbacks.onSettings?.({reducedMotion:this.reducedMotion,sound:!this.muted});this.renderSettings();}}
+  hideSettings(resume=true) {this.settingsVisible=false;this.captureAction=null;$('settings-overlay').classList.add('hidden');if(resume&&this.settingsPaused)this.callbacks.onResume?.();this.settingsPaused=false;}
+
+  saveKeybinds(){try{localStorage.setItem('null-drift-keybinds-v1',JSON.stringify(this.keybinds));}catch{}this.callbacks.onKeybinds?.(this.keybinds);}
+  resolveAction(code){for(const [action] of KEY_ACTIONS)if(this.keybinds[action]===code)return action;const arrows={ArrowUp:'up',ArrowLeft:'left',ArrowDown:'down',ArrowRight:'right',ShiftRight:'ability'};return arrows[code]||null;}
+  mobileControlsAvailable(){return matchMedia('(pointer:coarse)').matches||(globalThis.navigator?.maxTouchPoints||0)>0;}
+  applyTouchMode(){$('joystick').classList.toggle('hidden',this.touchMode!=='joystick');$('touch-dpad').classList.toggle('hidden',this.touchMode!=='dpad');this.dpadHeld.clear();document.querySelectorAll('[data-dpad]').forEach(b=>b.classList.remove('pressed'));this.touch.x=this.touch.y=0;this.callbacks.onTouch?.({...this.touch});}
+  saveLayout(){try{localStorage.setItem('null-drift-mobile-layout-v1',JSON.stringify(this.mobileLayout));}catch{}}
+  applyLayout(){const w=window.innerWidth||document.documentElement.clientWidth||1,h=window.innerHeight||document.documentElement.clientHeight||1,mobile=this.mobileControlsAvailable();for(const id of LAYOUT_IDS){const el=document.querySelector(`[data-layout-id="${id}"]`);if(!el)continue;const offset=mobile&&this.mobileLayout[id]||{x:0,y:0};el.style.translate=`${Math.round(offset.x*w)}px ${Math.round(offset.y*h)}px`;}}
+  showLayoutEditor(){if(!this.mobileControlsAvailable()||this.state.phase!=='playing')return;this.layoutReturnPaused=this.pauseVisible&&!this.settingsPaused;this.settingsVisible=false;this.settingsPaused=false;this.captureAction=null;$('settings-overlay').classList.add('hidden');this.showPause(false);this.layoutVisible=true;document.documentElement.classList.add('layout-editing');$('layout-overlay').innerHTML='<div class="layout-panel"><strong>UIの位置を変更</strong><span>動かしたいパーツをドラッグ</span><button data-layout-action="reset">初期配置</button><button data-layout-action="done">完了</button></div>';$('layout-overlay').classList.remove('hidden');}
+  closeLayoutEditor(){if(!this.layoutVisible)return;this.layoutVisible=false;document.documentElement.classList.remove('layout-editing');$('layout-overlay').classList.add('hidden');this.saveLayout();if(this.layoutReturnPaused)this.showPause(true);else this.callbacks.onResume?.();this.layoutReturnPaused=false;}
+  bindLayout(){let drag=null;const hud=$('game-hud');hud.addEventListener('pointerdown',e=>{if(!this.layoutVisible)return;const el=e.target.closest('[data-layout-id]');if(!el)return;e.preventDefault();e.stopPropagation();const id=el.dataset.layoutId,r=el.getBoundingClientRect(),offset=this.mobileLayout[id]||{x:0,y:0};drag={id,el,pointerId:e.pointerId,startX:e.clientX,startY:e.clientY,rect:r,x:offset.x,y:offset.y};el.setPointerCapture?.(e.pointerId);},true);hud.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.pointerId)return;e.preventDefault();e.stopPropagation();const w=window.innerWidth||1,h=window.innerHeight||1,dx=Math.max(8-drag.rect.left,Math.min(w-8-drag.rect.right,e.clientX-drag.startX)),dy=Math.max(8-drag.rect.top,Math.min(h-8-drag.rect.bottom,e.clientY-drag.startY));this.mobileLayout[drag.id]={x:clampLayout(drag.x+dx/w),y:clampLayout(drag.y+dy/h)};this.applyLayout();},true);const end=e=>{if(!drag||e.pointerId!==drag.pointerId)return;e.preventDefault();e.stopPropagation();drag=null;this.saveLayout();};hud.addEventListener('pointerup',end,true);hud.addEventListener('pointercancel',end,true);}
 
   keyDown(e) {
+    if(this.captureAction){e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;if(e.code==='Escape'){this.captureAction=null;this.renderSettings();return;}const action=this.captureAction,previous=this.keybinds[action],occupied=KEY_ACTIONS.find(([id])=>id!==action&&this.keybinds[id]===e.code)?.[0];this.keybinds[action]=e.code;if(occupied)this.keybinds[occupied]=previous;this.captureAction=null;this.saveKeybinds();this.renderSettings();return;}
+    if(e.code==='Escape'&&this.layoutVisible){e.preventDefault();e.stopImmediatePropagation();this.closeLayoutEditor();return;}
     if(e.code==='Escape'&&(this.helpVisible||this.settingsVisible)){e.preventDefault();e.stopImmediatePropagation();if(this.helpVisible)this.hideHelp();else this.hideSettings();return;}
     if(this.helpVisible||this.settingsVisible||!$('avatar-overlay').classList.contains('hidden')||e.target.matches?.('input,textarea,select'))return;
     if(e.repeat)return;
@@ -1562,6 +1627,8 @@ class UI {
     joy.addEventListener('pointermove',e=>{if(e.pointerId===pointer){e.preventDefault();move(e);}});
     const release=e=>{if(e.pointerId!==pointer)return;pointer=null;this.touch.x=this.touch.y=0;knob.style.transform='';emit();};
     joy.addEventListener('pointerup',release);joy.addEventListener('pointercancel',release);
+    const syncDpad=()=>{this.touch.x=Number(this.dpadHeld.has('right'))-Number(this.dpadHeld.has('left'));this.touch.y=Number(this.dpadHeld.has('down'))-Number(this.dpadHeld.has('up'));emit();};
+    document.querySelectorAll('[data-dpad]').forEach(b=>{const direction=b.dataset.dpad;const down=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);this.dpadHeld.add(direction);b.classList.add('pressed');syncDpad();};const up=e=>{e.preventDefault();this.dpadHeld.delete(direction);b.classList.remove('pressed');syncDpad();};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);});
     document.querySelectorAll('[data-touch]').forEach(b=>{const key=b.dataset.touch;const down=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);this.touch[key]=true;if(key==='ability')this.touch.abilityHeld=true;emit();};const up=e=>{e.preventDefault();this.touch[key]=false;if(key==='ability')this.touch.abilityHeld=false;emit();};b.addEventListener('pointerdown',down);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);});
   }
 }
@@ -1588,7 +1655,7 @@ let touch={x:0,y:0,jump:false,ability:false,abilityHeld:false,interact:false};
 let lastConfig={classId:'diver',difficulty:'casual'};
 let ui,avatarEditor,avatarPaused=false;
 function clearInput(){keys.clear();edge={jump:false,ability:false,altAbility:false,interact:false};touch={x:0,y:0,jump:false,ability:false,abilityHeld:false,interact:false};}
-function closeModals(){if(avatarEditor?.visible){avatarPaused=false;avatarEditor.close();}ui.showPause(false);ui.hideHelp(false);ui.hideSettings(false);}
+function closeModals(){if(avatarEditor?.visible){avatarPaused=false;avatarEditor.close();}if(ui.layoutVisible)ui.closeLayoutEditor();ui.showPause(false);ui.hideHelp(false);ui.hideSettings(false);}
 function persistBest(){achievements={...achievements,...game.state.achievements};try{localStorage.setItem('null-drift-achievements',JSON.stringify(achievements));}catch{}if(game.state.best>best){best=game.state.best;try{localStorage.setItem('null-drift-best',String(best));}catch{}}}
 function start(config){sound.unlock();lastConfig={...lastConfig,...config};if(!lastConfig.seed)lastConfig.seed=String(Date.now());clearInput();closeModals();game.newRun({...lastConfig,achievements});game.state.best=best;renderer.trail=[];renderer.particles=[];renderer.effects.clear();refresh();}
 function pause(){if(game.state.phase!=='playing')return;clearInput();ui.showPause(true);refresh();}
@@ -1609,13 +1676,14 @@ ui=new UI({
  onFullscreen:async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{ui.toast('全画面にできませんでした。ブラウザの表示メニューから切り替えられます。','warning');}},
  onAudioPreview:()=>sound.preview(),
  onSettings:value=>{sound.unlock();sound.setVolumes(value);settings={...settings,...value};renderer.reducedMotion=!!settings.reducedMotion;if(value.sound!==undefined)toggleSound(!value.sound);try{localStorage.setItem('null-drift-settings',JSON.stringify(settings));}catch{}},
- onTouch:value=>{if(value.jump&&!touch.jump)edge.jump=true;if(value.ability&&!touch.ability)edge.ability=true;if(value.altAbility&&!touch.altAbility)edge.altAbility=true;if(value.interact&&!touch.interact)edge.interact=true;touch={...touch,...value};}
+ onTouch:value=>{if(value.jump&&!touch.jump)edge.jump=true;if(value.ability&&!touch.ability)edge.ability=true;if(value.altAbility&&!touch.altAbility)edge.altAbility=true;if(value.interact&&!touch.interact)edge.interact=true;touch={...touch,...value};},
+ onKeybinds:clearInput
 });
 avatarEditor=new AvatarEditor({getClassId:()=>game.state.phase==='menu'?ui.classId:game.state.classId,onChange:(colors,name)=>{renderer.avatarColors=colors;renderer.playerName=name;ui?.drawClassIcons(colors);},onOpen:()=>{avatarPaused=game.state.phase==='playing'&&!ui.pauseVisible;if(avatarPaused)pause();clearInput();},onClose:()=>{if(avatarPaused)resume();avatarPaused=false;}});
 renderer.reducedMotion||=ui.reducedMotion;
 ui.audioValues={volume:sound.volume,musicVolume:sound.musicVolume,effectsVolume:sound.effectsVolume};
 ui.setMuted(muted);
-function isPaused(){return !!(ui.pauseVisible||ui.helpVisible||ui.settingsVisible||avatarEditor?.visible||document.hidden);}
+function isPaused(){return !!(ui.pauseVisible||ui.helpVisible||ui.settingsVisible||ui.layoutVisible||avatarEditor?.visible||document.hidden);}
 function details(){const s=game.state,p=s.player;let objective;
  const operator=s.enemies?.find(e=>e.type==='operator'&&e.state==='observing');
  if(operator)objective=`観測中 ${Math.max(0,operator.timer).toFixed(1)}s — 移動キーとShiftを離して！`;
@@ -1625,24 +1693,25 @@ function details(){const s=game.state,p=s.player;let objective;
  else if(s.collapse&&s.collapseTime<3)objective='崩壊まで '+Math.max(0,3-s.collapseTime).toFixed(1)+'秒 — 中央へ戻ろう！';
  else if(s.collapse&&!s.beacon.open)objective=`黄金ギフト ${s.goldCollected} / ${Math.ceil(s.total*.4)} — 集めて出口を開こう`;
  else if(s.collapse)objective=s.collapseCompletedWaves>=s.collapseWaves?'中央の足場は安全。帰還口へ戻ろう。':'崩壊 '+s.collapseWave+' / '+s.collapseWaves+' — 前の組が崩れ切ってから次へ。中央は安全！';
- else if(s.floorTime<10)objective='WASDで移動 / Spaceでジャンプ / Shiftでアビリティ';
+ else if(s.floorTime<10)objective='移動してギフトを集める / ジャンプと能力で足場を渡ろう';
  else objective='紫のギフトをすべて回収。ミニマップの点も探そう。';
  let prompt='';const altar=s.altars?.find(a=>!a.used&&Math.hypot(a.x-p.x,a.y-p.y)<a.radius+26&&!p.ghost);
  if(altar){let name={chance:'偶然',protection:'保護',purgatory:'煉獄',passage:'通路',purification:'浄化'}[altar.type]||'未知';let effect={chance:'運試し',protection:'シールドを獲得',purgatory:'半分回収する前のみ・敵増加と黄金倍率+2',passage:'30秒だけの黄金の脇道',purification:'通常の呪いを解除・敵が永続増加'}[altar.type];prompt=`${name}の祭壇 · ${effect} / ${altar.cost}G`;}
  return{paused:ui.pauseVisible,muted,best,elapsed:s.time,objective,prompt};
 }
 function refresh(){ui.update(game.state,details());}
-function input(){return{x:(keys.has('KeyD')||keys.has('ArrowRight')?1:0)-(keys.has('KeyA')||keys.has('ArrowLeft')?1:0)+touch.x,y:(keys.has('KeyS')||keys.has('ArrowDown')?1:0)-(keys.has('KeyW')||keys.has('ArrowUp')?1:0)+touch.y,...edge,jumpHeld:keys.has('Space')||touch.jump,abilityHeld:keys.has('ShiftLeft')||keys.has('ShiftRight')||touch.abilityHeld};}
-const gameKeys=new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','ShiftLeft','ShiftRight','KeyE','KeyF']);
+function held(action){for(const code of keys)if(ui.resolveAction(code)===action)return true;return false;}
+function input(){return{x:Number(held('right'))-Number(held('left'))+touch.x,y:Number(held('down'))-Number(held('up'))+touch.y,...edge,jumpHeld:held('jump')||touch.jump,abilityHeld:held('ability')||touch.abilityHeld};}
 document.addEventListener('keydown',e=>{
  if(e.defaultPrevented||e.target.matches('input,textarea,select'))return;
- if(gameKeys.has(e.code)&&game.state.phase==='playing')e.preventDefault();
- if(!e.repeat&&e.code==='Escape'&&game.state.phase==='playing'){e.preventDefault();if(ui.pauseVisible)resume();else pause();return;}
- if(!e.repeat&&e.code==='KeyH'){e.preventDefault();ui.showHelp();clearInput();return;}
- if(!e.repeat&&e.code==='KeyM'){toggleSound();return;}
+ const action=ui.resolveAction(e.code);
+ if(action&&game.state.phase==='playing')e.preventDefault();
+ if(!e.repeat&&action==='pause'&&game.state.phase==='playing'){e.preventDefault();if(ui.layoutVisible||ui.settingsVisible||ui.helpVisible)return;if(ui.pauseVisible)resume();else pause();return;}
+ if(!e.repeat&&!action&&e.code==='KeyH'){e.preventDefault();ui.showHelp();clearInput();return;}
+ if(!e.repeat&&!action&&e.code==='KeyM'){toggleSound();return;}
  if(!e.repeat&&e.code==='KeyR'&&game.state.phase==='dead'){start({...lastConfig,seed:String(Date.now())});return;}
  if(isPaused()||game.state.phase!=='playing')return;
- if(!keys.has(e.code)){if(e.code==='Space')edge.jump=true;if(e.code.startsWith('Shift'))edge.ability=true;if(e.code==='KeyF')edge.altAbility=true;if(e.code==='KeyE')edge.interact=true;}
+ if(!keys.has(e.code)){if(action==='jump')edge.jump=true;if(action==='ability')edge.ability=true;if(action==='altAbility')edge.altAbility=true;if(action==='interact')edge.interact=true;}
  keys.add(e.code);
 });
 document.addEventListener('keyup',e=>keys.delete(e.code));

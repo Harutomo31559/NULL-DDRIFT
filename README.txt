@@ -1,1 +1,7 @@
-NULL DRIFT v14. Replace the index.html in the root of the GitHub Pages repository NULL-DDRIFT and commit. Mobile UI text selection and double-tap highlight are disabled; editable text/color fields remain usable.
+NULL DRIFT v15
+
+GitHub Pagesに公開する場合、ZIP内のindex.htmlをリポジトリ直下のindex.htmlと差し替えてください。
+ほかのファイルは必要ありません。
+
+追加内容：キー割り当て、スマホUIのドラッグ配置、スティック／矢印キー切り替え、能力ボタンの表示改善、横画面のスクロール抑制。
+設定は端末のブラウザに保存されます。
