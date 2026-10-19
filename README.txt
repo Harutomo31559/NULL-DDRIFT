@@ -1,1 +1,1 @@
-NULL DRIFT v23. Replace the repository root index.html with this file to update GitHub Pages. This package contains the complete standalone browser game.
+NULL DRIFT v27. Replace the repository root index.html with this file to update GitHub Pages. This package contains the complete standalone browser game.
