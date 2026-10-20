@@ -1,1 +1,1 @@
-NULL DRIFT v31. Replace the repository root index.html with this file to update GitHub Pages. This package contains the complete standalone browser game.
+NULL DRIFT v46. Cosmetic trial mode is off: only purchased items can be equipped, and unowned trial selections revert to default on load. Null Trail now has a clearer bright-purple-to-black gradient. Replace repository root index.html to update GitHub Pages.
