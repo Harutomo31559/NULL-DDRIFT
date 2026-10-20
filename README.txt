@@ -1,1 +1,4 @@
-NULL DRIFT v46. Cosmetic trial mode is off: only purchased items can be equipped, and unowned trial selections revert to default on load. Null Trail now has a clearer bright-purple-to-black gradient. Replace repository root index.html to update GitHub Pages.
+NULL DRIFT v48
+
+index.html を GitHub Pages の公開先にアップロードしてください。
+修正: NILの突進は開始時に向きを決め、途中で曲がりません。予告線はありません。
